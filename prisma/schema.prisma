@@ -1,23 +1,27 @@
 // prisma/schema.prisma
 
-// Existing User model (ensure it's correctly linked with Clerk's userId)
-model User {
-  id        String   @id @default(cuid()) // Your internal Prisma User ID
-  clerkId   String   @unique // Store Clerk's userId here
-  email     String   @unique
-  name      String?
-  password  String // Store hashed password if using credentials provider with NextAuth.js initially.
-                    // If strictly Clerk, this might become optional or removed later depending on your setup.
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  posts     Post[]   // A user can have many posts
-
-  // Adjusting for Clerk: we'll use Clerk's `userId` as the `clerkId`
-  // You might want to remove 'password' if you're not using credentials at all now
-  // and manage users solely via Clerk.
+// Add this block at the very top of your file
+datasource db {
+  provider = "postgresql" // Or "mysql", "sqlite", "mongodb", etc.
+  url      = env("DATABASE_URL") // Or DB_URL, make sure this matches your .env
 }
 
-// New Post model
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Your existing User and Post models go here
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  email     String   @unique
+  name      String?
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  posts     Post[]
+}
+
 model Post {
   id        String   @id @default(cuid())
   title     String
@@ -25,6 +29,6 @@ model Post {
   published Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  authorId  String // Foreign key to the User model
+  authorId  String
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
 }
