@@ -1,5 +1,7 @@
+// src/app/layout.tsx
 import { ClerkProvider } from '@clerk/nextjs';
-import './globals.css'; // Assuming you have global styles
+import './globals.css';
+import Navbar from '@/components/Navbar'; // Import your new Navbar component
 
 export default function RootLayout({
   children,
@@ -7,10 +9,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    // Wrap your entire application with ClerkProvider
     <ClerkProvider>
       <html lang="en">
-        <body>{children}</body>
+        <body className="flex flex-col min-h-screen"> {/* Added flex utilities */}
+          <Navbar /> {/* Render the Navbar here */}
+          <main className="flex-grow"> {/* Added flex-grow to push footer down if you add one later */}
+            {children}
+          </main>
+        </body>
       </html>
     </ClerkProvider>
   );
