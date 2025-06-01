@@ -1,5 +1,5 @@
 // src/components/Navbar.tsx
-'use client'; // This will be a Client Component due to interactive elements
+'use client';
 
 import Link from 'next/link';
 import { UserButton, SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
@@ -8,24 +8,24 @@ export default function Navbar() {
   return (
     <nav className="bg-gradient-to-r from-blue-600 to-indigo-700 p-4 shadow-lg sticky top-0 z-50">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
-        {/* Logo Section */}
+        {/* Logo Section - Changed to a Blog Icon */}
         <Link href="/" className="flex items-center space-x-2 text-white hover:text-gray-200 transition duration-200">
-          {/* You can replace this SVG with an <img> tag for your actual logo */}
+          {/* Blog-themed Pen Icon (from Heroicons) */}
           <svg
-            className="w-8 h-8 text-white"
+            xmlns="http://www.www.w3.org/2000/svg"
             fill="none"
-            stroke="currentColor"
             viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
+            strokeWidth="1.5"
+            stroke="currentColor"
+            className="w-8 h-8"
           >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeWidth="2"
-              d="M9.75 17L9 20l-1 1h8l-1-1-1.25-3M3.5 7h1.096A3.999 3.999 0 008 4c.646 0 1.257.199 1.764.536l.707-.707A5.98 5.98 0 008 2C4.686 2 2 4.686 2 8s2.686 6 6 6l.5.5H16l.5-.5c3.314 0 6-2.686 6-6s-2.686-6-6-6A5.98 5.98 0 0015.793 4.829l.707.707A3.999 3.999 0 0019.404 7H20.5a.5.5 0 01.5.5v8a.5.5 0 01-.5.5h-17a.5.5 0 01-.5-.5v-8A.5.5 0 013.5 7z"
-            ></path>
+              d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"
+            />
           </svg>
-          <span className="text-2xl font-bold tracking-tight">ClerkApp</span>
+          <span className="text-2xl font-bold tracking-tight">My Awesome Blog</span> {/* Updated text */}
         </Link>
 
         {/* Navigation Links */}
@@ -42,11 +42,9 @@ export default function Navbar() {
         {/* Auth Buttons */}
         <div className="flex items-center space-x-4">
           <SignedIn>
-            {/* Show UserButton (profile menu) if signed in */}
             <UserButton afterSignOutUrl="/" />
           </SignedIn>
           <SignedOut>
-            {/* Show Sign In button if signed out */}
             <SignInButton mode="modal">
               <button className="px-4 py-2 bg-white text-blue-600 rounded-md font-semibold hover:bg-gray-100 transition duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50">
                 Sign In
