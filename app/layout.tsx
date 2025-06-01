@@ -1,7 +1,8 @@
 // src/app/layout.tsx
 import './globals.css';
 import { Inter } from 'next/font/google';
-import { SessionProvider } from 'next-auth/react'; // Import SessionProvider
+import { SessionProvider } from 'next-auth/react';
+import Navbar from '@/components/Navbar'; // Import the Navbar
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -18,9 +19,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        {/* Wrap your children with SessionProvider */}
         <SessionProvider>
-          {children}
+          <Navbar /> {/* Add Navbar here */}
+          <main>{children}</main> {/* Wrap children in a main tag if desired */}
         </SessionProvider>
       </body>
     </html>
