@@ -27,14 +27,20 @@ export async function POST(req: Request) {
 
     if (!userInDb) {
       // If the user doesn't exist in your DB, create them.
-      // You might fetch more details from Clerk's API here if needed (e.g., email, name).
-      // For simplicity, we'll use a placeholder email and name if not found.
-      const clerkUser = await currentUser();
+      const clerkUser = await currentUser(); // Get the full Clerk user object
+
+      // Determine the user's name: prioritize firstName, then username, then email, then a generic fallback.
+      const userNameToUse =
+        clerkUser?.firstName ||
+        clerkUser?.username ||
+        clerkUser?.emailAddresses[0]?.emailAddress ||
+        `Clerk User ${userId.substring(0, 5)}`;
+
       userInDb = await prisma.user.create({
         data: {
           clerkId: userId,
           email: clerkUser?.emailAddresses[0]?.emailAddress || `${userId}@example.com`,
-          name: clerkUser?.firstName || 'Clerk User',
+          name: userNameToUse, // Use the determined name here
           password: 'NOT_APPLICABLE_CLERK_MANAGED', // Placeholder if password field is still required by Prisma
         },
       });
