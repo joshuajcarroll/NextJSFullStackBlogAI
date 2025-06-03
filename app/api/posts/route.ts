@@ -1,14 +1,22 @@
 // src/app/api/posts/route.ts
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { auth, currentUser } from '@clerk/nextjs/server'; // Import Clerk's auth helper
+import { auth, currentUser } from '@clerk/nextjs/server';
+
+// Import JSDOM and DOMPurify for server-side HTML sanitization
+import { JSDOM } from 'jsdom';
+import DOMPurify from 'dompurify';
+
+// Initialize DOMPurify with a JSDOM window environment
+const window = new JSDOM('').window;
+const purify = DOMPurify(window); // Type assertion needed for DOMPurify with JSDOM
 
 const prisma = new PrismaClient();
 
 // POST /api/posts - Create a new post
 export async function POST(req: Request) {
   try {
-    const { userId } = await auth(); // Get the authenticated userId from Clerk
+    const { userId } = await auth();
 
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -20,16 +28,18 @@ export async function POST(req: Request) {
       return new NextResponse("Title and content are required", { status: 400 });
     }
 
-    // Find or create the user in your Prisma database using their Clerk userId
+    // --- SANITIZE THE CONTENT HERE ---
+    const sanitizedContent = purify.sanitize(content, {
+      USE_PROFILES: { html: true } // Keep a basic HTML profile
+    });
+    // --- END SANITIZATION ---
+
     let userInDb = await prisma.user.findUnique({
       where: { clerkId: userId },
     });
 
     if (!userInDb) {
-      // If the user doesn't exist in your DB, create them.
-      const clerkUser = await currentUser(); // Get the full Clerk user object
-
-      // Determine the user's name: prioritize firstName, then username, then email, then a generic fallback.
+      const clerkUser = await currentUser();
       const userNameToUse =
         clerkUser?.firstName ||
         clerkUser?.username ||
@@ -40,8 +50,8 @@ export async function POST(req: Request) {
         data: {
           clerkId: userId,
           email: clerkUser?.emailAddresses[0]?.emailAddress || `${userId}@example.com`,
-          name: userNameToUse, // Use the determined name here
-          password: 'NOT_APPLICABLE_CLERK_MANAGED', // Placeholder if password field is still required by Prisma
+          name: userNameToUse,
+          password: 'NOT_APPLICABLE_CLERK_MANAGED',
         },
       });
     }
@@ -49,9 +59,9 @@ export async function POST(req: Request) {
     const post = await prisma.post.create({
       data: {
         title,
-        content,
-        authorId: userInDb.id, // Link post to your internal Prisma user ID
-        published: true, // Or set to false and have an admin panel to publish
+        content: sanitizedContent, // Use the sanitized content
+        authorId: userInDb.id,
+        published: true,
       },
     });
 
@@ -62,13 +72,13 @@ export async function POST(req: Request) {
   }
 }
 
-// GET /api/posts - Fetch all posts
+// GET /api/posts - Fetch all posts (unchanged)
 export async function GET() {
   try {
     const posts = await prisma.post.findMany({
-      where: { published: true }, // Only fetch published posts
-      include: { author: { select: { name: true, email: true } } }, // Include author name and email
-      orderBy: { createdAt: 'desc' }, // Order by most recent
+      where: { published: true },
+      include: { author: { select: { name: true, email: true } } },
+      orderBy: { createdAt: 'desc' },
     });
     return NextResponse.json(posts);
   } catch (error) {

@@ -1,22 +1,30 @@
 // src/components/PostFormClient.tsx
-'use client'; // This is a client component
+'use client';
 
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 
-// Define the shape of the data the form handles
+// Dynamically import the new TinyMCEEditor component
+const TinyMCEEditor = dynamic(() => import('./TinyMCEEditor'), {
+  ssr: false, // Crucial: disable server-side rendering for TinyMCEEditor
+  loading: () => <p>Loading editor...</p>, // Optional: A loading placeholder
+});
+
+
+// Define the shape of the data the form handles (unchanged)
 interface PostFormData {
   title: string;
   content: string;
   published: boolean;
-  videoUrl?: string; // Optional video URL
+  videoUrl?: string;
 }
 
-// Define the props for our reusable form component
+// Define the props for our reusable form component (unchanged)
 interface PostFormProps {
-  initialData?: PostFormData; // Optional: for pre-filling when editing
-  onSubmit: (data: PostFormData) => Promise<void>; // Function to call on form submission
-  isSubmitting: boolean; // To disable inputs during submission
-  submitButtonText: string; // Text for the submit button (e.g., "Create Post", "Save Changes")
+  initialData?: PostFormData;
+  onSubmit: (data: PostFormData) => Promise<void>;
+  isSubmitting: boolean;
+  submitButtonText: string;
 }
 
 export default function PostFormClient({
@@ -27,10 +35,9 @@ export default function PostFormClient({
 }: PostFormProps) {
   const [title, setTitle] = useState(initialData?.title || '');
   const [content, setContent] = useState(initialData?.content || '');
-  const [published, setPublished] = useState(initialData?.published ?? false); // Default to false if not provided
+  const [published, setPublished] = useState(initialData?.published ?? false);
   const [videoUrl, setVideoUrl] = useState(initialData?.videoUrl || '');
 
-  // Effect to update form state if initialData changes (e.g., when loading data for edit)
   useEffect(() => {
     if (initialData) {
       setTitle(initialData.title);
@@ -66,15 +73,14 @@ export default function PostFormClient({
         <label htmlFor="content" className="block text-sm font-medium text-gray-700">
           Content
         </label>
-        <textarea
-          id="content"
-          rows={10}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          disabled={isSubmitting}
-          className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-          required
-        ></textarea>
+        <div className="mt-1"> {/* Removed quill-editor-container as it's specific to Quill */}
+          {/* Use our new TinyMCEEditor component */}
+          <TinyMCEEditor
+            value={content}
+            onChange={setContent}
+            readOnly={isSubmitting}
+          />
+        </div>
       </div>
 
       <div>
@@ -82,7 +88,7 @@ export default function PostFormClient({
           Video URL (Optional)
         </label>
         <input
-          type="url" // Use type="url" for better validation
+          type="url"
           id="videoUrl"
           value={videoUrl}
           onChange={(e) => setVideoUrl(e.target.value)}
