@@ -1,17 +1,16 @@
 // src/app/admin/posts/new/page.tsx
-'use client'; // This is a client component
+'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@clerk/nextjs'; // Import useAuth for redirect
-import PostFormClient from '@/components/PostFormClient'; // Update import path and name
+import { useAuth } from '@clerk/nextjs';
+import PostFormClient from '@/components/PostFormClient';
 
 export default function NewPostPage() {
   const router = useRouter();
-  const { userId, isLoaded } = useAuth(); // Get Clerk userId and loaded status
+  const { userId, isLoaded } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Redirect if not authenticated (client-side check)
   if (!isLoaded) {
     return (
       <div className="flex justify-center items-center h-screen bg-gray-100">
@@ -21,11 +20,11 @@ export default function NewPostPage() {
   }
 
   if (!userId) {
-    router.push('/sign-in'); // Redirect unauthenticated users
-    return null; // Don't render anything while redirecting
+    router.push('/sign-in');
+    return null;
   }
 
-  const handleCreatePost = async (formData: { title: string; content: string; published: boolean; videoUrl?: string }) => {
+  const handleCreatePost = async (formData: { title: string; content: string; published: boolean; videoUrl?: string; imageUrl?: string }) => { // <--- MODIFIED: Added imageUrl to type
     setIsSubmitting(true);
     try {
       const response = await fetch('/api/posts', {
@@ -43,7 +42,7 @@ export default function NewPostPage() {
 
       const newPost = await response.json();
       alert('Post created successfully!');
-      router.push(`/blog/${newPost.id}`); // Redirect to the new post's page
+      router.push(`/blog/${newPost.id}`);
     } catch (error: unknown) {
       console.error('Error creating post:', error);
       let message = 'Could not create post.';

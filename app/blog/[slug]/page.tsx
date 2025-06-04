@@ -1,102 +1,94 @@
 // src/app/blog/[slug]/page.tsx
-import { notFound } from 'next/navigation';
+import { auth } from '@clerk/nextjs/server';
 import { PrismaClient } from '@prisma/client';
-import Link from 'next/link';
-import { auth } from '@clerk/nextjs/server'; // Import auth from Clerk
-
-import SanitizedHtmlDisplay from '@/components/SanitizedHtmlDisplay';
-import VideoEmbed from '@/components/VideoEmbed';
+import Image from 'next/image';
+import Link from 'next/link'; // Make sure Link is imported
 
 const prisma = new PrismaClient();
 
 interface BlogPostPageProps {
   params: {
-    slug: string;
+    slug: string; // The ID of the post
   };
 }
 
-export async function generateStaticParams() {
-  const posts = await prisma.post.findMany({
-    select: { id: true },
-  });
-  return posts.map(post => ({
-    slug: post.id,
-  }));
-}
-
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
-  const { userId } = await auth(); // Get the authenticated user's ID
+  const { userId } = await auth();
 
-  const postId = params.slug;
+  const { slug: postId } = await params;
 
   const post = await prisma.post.findUnique({
     where: { id: postId, published: true },
     include: {
       author: {
         select: {
+          id: true,
+          clerkId: true,
           name: true,
           email: true,
-          clerkId: true, // IMPORTANT: Select the author's clerkId
         },
       },
     },
   });
 
   if (!post) {
-    notFound();
+    return (
+      <div className="container mx-auto p-4 text-center">
+        <h1 className="text-2xl font-bold">Post Not Found</h1>
+        <p className="text-gray-600">The requested blog post does not exist or is not published.</p>
+      </div>
+    );
   }
 
-  // Determine if the current user is the author
   const isAuthor = userId && post.author.clerkId === userId;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-xl p-8 lg:p-12">
-        {/* Post Title */}
-        <h1 className="text-4xl font-extrabold text-gray-900 mb-6 text-center leading-tight">
-          {post.title}
-        </h1>
-
-        {/* Author and Date */}
-        <div className="text-gray-600 text-sm mb-8 text-center">
-          <p>
-            By <span className="font-semibold text-blue-600">{post.author.name}</span> on{' '}
-            {new Date(post.createdAt).toLocaleDateString()}
-          </p>
-        </div>
-
-        {/* Edit Post Button (visible only to author) */}
+    <div className="container mx-auto p-4 max-w-3xl">
+      <h1 className="text-4xl font-extrabold mb-4 text-gray-900 text-center md:text-left">{post.title}</h1>
+      <p className="text-sm text-gray-500 mb-6 text-center md:text-left">
+        By {post.author.name} on {new Date(post.createdAt).toLocaleDateString()}
         {isAuthor && (
-          <div className="text-center mb-8">
-            <Link
-              href={`/admin/posts/${post.id}/edit`} // Adjust this path if your edit page is different
-              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-            >
+          <span className="ml-4">
+            <Link href={`/admin/posts/${postId}/edit`} className="text-blue-600 hover:underline">
               Edit Post
             </Link>
-          </div>
+          </span>
         )}
+      </p>
 
-        {/* Main Post Content - Rendered via the client component */}
-        <SanitizedHtmlDisplay html={post.content} />
-
-        {/* Optional Video Embed */}
-        {post.videoUrl && (
-          <div className="mt-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Related Video</h2>
-            <VideoEmbed videoUrl={post.videoUrl} />
-          </div>
-        )}
-
-        {/* Back to Posts Button */}
-        <div className="mt-12 text-center">
-          <Link
-            href="/blog"
-            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            ← Back to all posts
-          </Link>
+      {post.imageUrl && (
+        <div className="mb-6">
+          <Image
+            src={post.imageUrl}
+            alt={post.title}
+            width={800}
+            height={450}
+            className="w-full h-auto rounded-lg object-cover"
+            priority
+          />
         </div>
+      )}
+
+      {post.videoUrl && (
+        <div className="mb-6 aspect-w-16 aspect-h-9">
+          <iframe
+            src={post.videoUrl.replace("watch?v=", "embed/")}
+            title="YouTube video player"
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="w-full h-full rounded-lg"
+          ></iframe>
+        </div>
+      )}
+
+      <div className="prose lg:prose-lg break-words" dangerouslySetInnerHTML={{ __html: post.content }} />
+
+      {/* --- NEW: Button to go back to blog list --- */}
+      <div className="mt-8 text-center"> {/* Added margin-top and text-center for the button */}
+        <Link href="/blog" className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out">
+          &larr; Back to All Posts
+        </Link>
       </div>
     </div>
   );

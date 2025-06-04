@@ -19,10 +19,10 @@ interface Context {
   };
 }
 
-// GET /api/posts/[id] - Fetch a single post by ID (unchanged)
+// GET /api/posts/[id] - Fetch a single post by ID
 export async function GET(request: Request, context: Context) {
   try {
-    const postId = context.params.id;
+    const { id: postId } = await context.params;
 
     const post = await prisma.post.findUnique({
       where: { id: postId },
@@ -53,8 +53,9 @@ export async function GET(request: Request, context: Context) {
 export async function PUT(req: Request, context: Context) {
   try {
     const { userId } = await auth();
-    const postId = context.params.id;
-    const { title, content, published } = await req.json();
+    const { id: postId } = await context.params;
+    // --- MODIFIED HERE: Rename incoming imageUrl to newImageUrl ---
+    const { title, content, published, videoUrl, imageUrl: newImageUrl } = await req.json();
 
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -79,18 +80,39 @@ export async function PUT(req: Request, context: Context) {
 
     // --- SANITIZE THE CONTENT HERE ---
     const sanitizedContent = purify.sanitize(content, {
-      USE_PROFILES: { html: true } // Keep a basic HTML profile
+      USE_PROFILES: { html: true }
     });
     // --- END SANITIZATION ---
 
+    const updatedData: {
+      title: string;
+      content: string;
+      published: boolean;
+      videoUrl: string | null;
+      imageUrl: string | null; // This will now always be explicitly set
+      updatedAt: Date;
+    } = {
+      title: title,
+      content: sanitizedContent,
+      published: published ?? postToUpdate.published,
+      videoUrl: videoUrl || null,
+      updatedAt: new Date(),
+      imageUrl: newImageUrl !== undefined ? (newImageUrl || null) : postToUpdate.imageUrl, // Handle preserving existing image
+    };
+
+    // --- LOGIC FOR IMAGE URL PRESERVATION ---
+    // if (newImageUrl !== undefined) {
+    //   // If imageUrl was explicitly sent in the request, use it (can be null if cleared)
+    //   updatedData.imageUrl = newImageUrl || null;
+    // } else {
+    //   // If imageUrl was NOT sent in the request (user didn't change it), preserve existing
+    //   updatedData.imageUrl = postToUpdate.imageUrl;
+    // }
+    // The above explicit if/else is replaced by the cleaner ternary in updatedData initialization
+
     const updatedPost = await prisma.post.update({
       where: { id: postId },
-      data: {
-        title: title,
-        content: sanitizedContent, // Use the sanitized content
-        published: published ?? postToUpdate.published,
-        updatedAt: new Date(),
-      },
+      data: updatedData,
     });
 
     return NextResponse.json(updatedPost);
@@ -100,11 +122,11 @@ export async function PUT(req: Request, context: Context) {
   }
 }
 
-// DELETE /api/posts/[id] - Delete a post by ID (unchanged)
+// DELETE /api/posts/[id] - Delete a post by ID
 export async function DELETE(request: Request, context: Context) {
   try {
     const { userId } = await auth();
-    const postId = context.params.id;
+    const { id: postId } = await context.params;
 
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });

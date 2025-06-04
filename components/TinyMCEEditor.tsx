@@ -6,11 +6,11 @@ import { Editor } from '@tinymce/tinymce-react'; // Import the Editor component
 
 interface TinyMCEEditorProps {
   value: string;
-  onChange: (value: string) => void;
+  onEditorChange: (value: string) => void;
   readOnly: boolean;
 }
 
-const TinyMCEEditor = ({ value, onChange, readOnly }: TinyMCEEditorProps) => {
+const TinyMCEEditor = ({ value, onEditorChange, readOnly }: TinyMCEEditorProps) => {
   // IMPORTANT: Get your TinyMCE API Key
   // 1. Go to https://www.tiny.cloud/signup/ and create a free account.
   // 2. You'll get an API key. Replace 'YOUR_TINYMCE_API_KEY' with your actual key.
@@ -41,7 +41,7 @@ const TinyMCEEditor = ({ value, onChange, readOnly }: TinyMCEEditorProps) => {
       init={editorConfig}
       value={value}
       onEditorChange={(newValue) => {
-        onChange(newValue);
+        onEditorChange(newValue);
       }}
       disabled={readOnly} // TinyMCE uses 'disabled' for UI interaction, 'readonly' for core editor behavior
     />
